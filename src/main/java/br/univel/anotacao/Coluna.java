@@ -10,4 +10,7 @@ import java.lang.annotation.Target;
 public @interface Coluna {
 	String nome() default "";
 	boolean pk() default false;
+	String label() default "";
+	int max() default 10;
+	boolean obrigatorio() default false;	
 }

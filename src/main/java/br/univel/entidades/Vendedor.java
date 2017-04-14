@@ -6,14 +6,25 @@ import java.math.BigDecimal;
 
 @Tabela("vendedor")
 public class Vendedor {
-	@Coluna(pk=true, nome="idvendedor")
+	@Coluna(pk=true, nome="idvendedor", label="Código")
 	private int idVendedor;
 	
-	@Coluna(nome="nome")
+	@Coluna(nome="nome", label="Nome", max=30, obrigatorio=true)
 	private String nome;
 	
-	@Coluna(nome="percentualcomissao")
+	@Coluna(nome="percentualcomissao", label="% Comissão", obrigatorio=true)
 	private BigDecimal percentualComissao;
+	
+	public Vendedor() {
+		this(0, null, null);
+	}
+
+	public Vendedor(int id, String nome, BigDecimal comissao) {
+		super();
+		this.idVendedor = id;
+		this.nome = nome;
+		this.percentualComissao = comissao;
+	}	
 
 	public int getIdVendedor() {
 		return idVendedor;

@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import br.univel.entidades.Vendedor;
+// todo: import br.univel.entidades.Vendedor;
 import br.univel.anotacao.Coluna;
 import br.univel.anotacao.Tabela;
 
@@ -136,22 +136,33 @@ public class Execute {
 		return sb;
 	}
 	
-	public String getCreateTable(Class<?> cl) {
-		try {
-			StringBuilder sb = new StringBuilder();
+	private StringBuilder getWhere(Class<?> cl) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("\nWHERE\n\t");
+		
+		Field[] atributos = cl.getDeclaredFields();
+		
+		for (int i = 0, achou = 0; i < atributos.length; i++) {
+			Field field = atributos[i];
 
-			String nomeTabela = getNomeTabela(cl);
-			sb.append("CREATE TABLE ").append(nomeTabela).append(" (");
-			sb.append(getColunaCreate(cl).toString());
-			sb.append(",\n\tPRIMARY KEY( ");
-			sb.append(getPrimaryKey(cl).toString());
-			sb.append(" )");
-			sb.append("\n);");			
+			if (field.isAnnotationPresent(Coluna.class)) {
+				Coluna anotacaoColuna = field.getAnnotation(Coluna.class);
 
-			return sb.toString();
-		} catch (SecurityException e) {
-			throw new RuntimeException(e);
+				if (anotacaoColuna.pk()) {
+					if (achou > 0)
+						sb.append("AND\n\t ");
+
+					if (anotacaoColuna.nome().isEmpty())
+						sb.append(field.getName().toUpperCase()).append(" = ").append("?");
+					else
+						sb.append(anotacaoColuna.nome()).append(" = ").append("?");
+
+					achou++;
+				}
+			}
 		}
+		
+		return sb;
 	}
 	
 	private PreparedStatement getPreparedStatement(Connection con, Object obj, String sql, Class<?> cl) {
@@ -186,7 +197,48 @@ public class Execute {
 
 		return ps;		
 	}
+	
+	private String getSelectAll(Class<?> cl) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("SELECT * FROM ").append(getNomeTabela(cl));
+		return sb.toString();
+	}
+	
+	public PreparedStatement getPreparedStatementForCreateTable(Connection con, Object obj) {
+		Class<? extends Object> cl = obj.getClass();
 
+		StringBuilder sb = new StringBuilder();
+
+		String nomeTabela = getNomeTabela(cl);
+		sb.append("CREATE TABLE ").append(nomeTabela).append(" (");
+		sb.append(getColunaCreate(cl).toString());
+		sb.append(",\n\tPRIMARY KEY( ");
+		sb.append(getPrimaryKey(cl).toString());
+		sb.append(" )");
+		sb.append("\n);");			
+
+		return getPreparedStatement(con, obj, sb.toString(), cl);
+	}
+	
+	public PreparedStatement getPreparedStatementForSelectAll(Connection con, Object obj) {
+		Class<? extends Object> cl = obj.getClass();
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(getSelectAll(cl));
+
+		return getPreparedStatement(con, obj, sb.toString(), cl);
+	}
+	
+	public PreparedStatement getPreparedStatementForSelect(Connection con, Object obj) {
+		Class<? extends Object> cl = obj.getClass();
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(getSelectAll(cl)).append(getWhere(cl));
+
+		System.out.println(sb.toString());
+		return getPreparedStatement(con, obj, sb.toString(), cl);
+	}
+	
 	public PreparedStatement getPreparedStatementForInsert(Connection con, Object obj) {
 		Class<? extends Object> cl = obj.getClass();
 
@@ -205,13 +257,10 @@ public class Execute {
 			}
 			sb.append('?');
 		}
+		
 		sb.append(')');		
 
-		String strSql = sb.toString();
-		System.out.println("SQL GERADO: " + strSql);
-
-		PreparedStatement ps = getPreparedStatement(con, obj, strSql, cl);
-		return ps;
+		return getPreparedStatement(con, obj, sb.toString(), cl);
 	}
 	
 	public PreparedStatement getPreparedStatementForUpdate(Connection con, Object obj) {
@@ -222,44 +271,31 @@ public class Execute {
 		String nomeTabela = getNomeTabela(cl);
 		sb.append("UPDATE ").append(nomeTabela).append(" SET\n\t");
 		sb.append(getColunaUpdate(cl).toString());
-		sb.append("\nWHERE\n\t");
+		sb.append(getWhere(cl).toString());
 		
-		Field[] atributos = cl.getDeclaredFields();
-		
-		for (int i = 0, achou = 0; i < atributos.length; i++) {
-			Field field = atributos[i];
-
-			if (field.isAnnotationPresent(Coluna.class)) {
-				Coluna anotacaoColuna = field.getAnnotation(Coluna.class);
-
-				if (anotacaoColuna.pk()) {
-					if (achou > 0)
-						sb.append("AND\n\t ");
-
-					if (anotacaoColuna.nome().isEmpty())
-						sb.append(field.getName().toUpperCase()).append(" = ").append("?");
-					else
-						sb.append(anotacaoColuna.nome()).append(" = ").append("?");
-
-					achou++;
-				}
-			}
-		}		
-
-		String strSql = sb.toString();
-		System.out.println("SQL GERADO: " + strSql);
-
-		PreparedStatement ps = getPreparedStatement(con, obj, strSql, cl);
-		return ps;
+		return getPreparedStatement(con, obj, sb.toString(), cl);
 	}
 	
-	public Execute() {
-		String strCreateTable = getCreateTable(Vendedor.class);
-		System.out.println(strCreateTable);
+	public PreparedStatement getPreparedStatementForDelete(Connection con, Object obj) {
+		Class<? extends Object> cl = obj.getClass();
+
+		StringBuilder sb = new StringBuilder();
 		
+		String nomeTabela = getNomeTabela(cl);
+		sb.append("DELETE FROM ").append(nomeTabela);
+		sb.append(getWhere(cl).toString());
+		
+		return getPreparedStatement(con, obj, sb.toString(), cl);
+	}
+	
+	/* todo:
+	public Execute() {
 		BigDecimal comissao = new BigDecimal(10);
 
-		Vendedor vendedor = new Vendedor(1, "vendedor", comissao);
+		Vendedor vendedor = new Vendedor();
+		vendedor.setIdVendedor(1);
+		vendedor.setNome("vendedor");
+		vendedor.setPercentualComissao(comissao);
 
 		Connection con = null;
 		try {
@@ -270,9 +306,25 @@ public class Execute {
 			
 			PreparedStatement ps1 = getPreparedStatementForUpdate(con, vendedor);
 			ps1.executeUpdate();
+			
+			PreparedStatement ps2 = getPreparedStatementForDelete(con, vendedor);
+			ps2.executeUpdate();			
+			
+			PreparedStatement ps3 = getPreparedStatementForSelectAll(con, vendedor);
+			ps3.executeQuery();
+			
+			PreparedStatement ps4 = getPreparedStatementForCreateTable(con, vendedor);
+			ps4.executeUpdate();
+			
+			PreparedStatement ps5 = getPreparedStatementForSelect(con, vendedor);
+			ps5.executeQuery();			
 
 			ps.close();
 			ps1.close();
+			ps2.close();		
+			ps3.close();
+			ps4.close();
+			ps5.close();
 			con.close();
 
 		} catch (SQLException e) {
@@ -281,8 +333,7 @@ public class Execute {
 	}	
 	
 	public static void main(String[] args) {
-
 		new Execute();
-
-	}	
+	}
+	*/	
 }

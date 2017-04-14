@@ -15,17 +15,6 @@ public class Vendedor {
 	@Coluna(nome="percentualcomissao", label="% Comissão", obrigatorio=true)
 	private BigDecimal percentualComissao;
 	
-	public Vendedor() {
-		this(0, null, null);
-	}
-
-	public Vendedor(int id, String nome, BigDecimal comissao) {
-		super();
-		this.idVendedor = id;
-		this.nome = nome;
-		this.percentualComissao = comissao;
-	}	
-
 	public int getIdVendedor() {
 		return idVendedor;
 	}

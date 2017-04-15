@@ -3,8 +3,6 @@ package br.univel.apresentacao;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.lang.reflect.Field;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -18,7 +16,6 @@ import br.univel.anotacao.Coluna;
 public class UtilTela {
 	public JPanel gerarTela(Object o) {
 		JPanel contentPane = new JPanel();
-		JButton botaoGravar;
 
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		GridBagLayout gridBagLayout = new GridBagLayout();
@@ -26,10 +23,15 @@ public class UtilTela {
 		gridBagLayout.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
 		gridBagLayout.columnWeights = new double[]{1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, Double.MIN_VALUE};
-		contentPane.setLayout(gridBagLayout);		
+		contentPane.setLayout(gridBagLayout);
 		
+		gerarCampos(o, contentPane);
+
+		return contentPane;
+	}
+	
+	private void gerarCampos(Object o, JPanel contentPane) {
 		Class<? extends Object> cl = o.getClass();
-		
 		Field[] atributos = cl.getDeclaredFields();
 		
 		int y = 0;
@@ -46,21 +48,11 @@ public class UtilTela {
 
 		createButton(contentPane, "Buscar", 9, y);
 		createButton(contentPane, "Excluir", 10, y);
-
-		botaoGravar = createButton(contentPane, "Gravar", 11, y);
-		botaoGravar.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("Teste Gravar");
-				
-			}
-		});
+		createButton(contentPane, "Gravar", 11, y);
 		
 		y++;
 		JScrollPane scrollPane = createScrollPane(contentPane, 0, y);
-		createTable(scrollPane, o);
-
-		return contentPane;
+		createTable(scrollPane, o);		
 	}
 	
 	private String getLabelColuna(Field field) {

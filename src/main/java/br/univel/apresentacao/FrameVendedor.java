@@ -3,8 +3,6 @@ package br.univel.apresentacao;
 import java.awt.Container;
 import java.awt.EventQueue;
 import javax.swing.JFrame;
-
-import br.univel.comum.Postgres;
 import br.univel.entidades.Vendedor;
 
 public class FrameVendedor extends Frame {
@@ -38,9 +36,7 @@ public class FrameVendedor extends Frame {
 	private Container getMeuContentPane() {
 		UtilTela u = new UtilTela();
 		Vendedor v = new Vendedor();
-		Postgres p = new Postgres();
 		
-		p.conectar();
 		return u.gerarTela(v);
 	}
 

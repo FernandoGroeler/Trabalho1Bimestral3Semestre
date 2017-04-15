@@ -4,13 +4,19 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class BancoDados {
+public class Conexao {
 	private Connection con;
-
 	private String url;
 	private String usuario;
 	private String senha;
 	private String driver;
+	
+	public Connection getConnection() {
+		if (con == null)
+			conectar();
+		
+		return con;
+	}
 	
 	public String getUrl() {
 		return url;

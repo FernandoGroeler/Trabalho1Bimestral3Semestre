@@ -1,6 +1,6 @@
 package br.univel.comum;
 
-public class Postgres extends BancoDados {
+public class ConexaoPostgreSQL extends Conexao {
 
 	@Override
 	public void conectar() {

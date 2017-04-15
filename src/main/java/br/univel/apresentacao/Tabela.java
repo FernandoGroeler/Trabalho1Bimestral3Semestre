@@ -1,20 +1,40 @@
 package br.univel.apresentacao;
 
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import javax.swing.table.AbstractTableModel;
+import br.univel.anotacao.Coluna;
+import br.univel.comum.Execute;
 
 public class Tabela extends AbstractTableModel {
 	private static final long serialVersionUID = 7395886541922199714L;
 	private Class<? extends Object> cl;
-	
+	private ResultSet resultSet;
+
 	public Tabela(Object o) {
 		cl = o.getClass();
-	}
 
+		Execute ex = new Execute();
+		try {
+			resultSet = ex.executeSelectAll(o);
+			resultSet.first();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	@Override
 	public int getRowCount() {
-		return 0;
+		try {
+			resultSet.last();
+			return resultSet.getRow();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return 0;
+		}
 	}
 
 	@Override
@@ -25,8 +45,21 @@ public class Tabela extends AbstractTableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		// TODO Auto-generated method stub
+		try {
+			this.resultSet.absolute(rowIndex + 1);
+			return this.resultSet.getString(columnIndex + 1);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return null;
+	}
+
+	@Override
+	public String getColumnName(int column) {
+		Field[] atributos = cl.getDeclaredFields();
+		Field field = atributos[column];
+		Coluna anotacaoColuna = field.getAnnotation(Coluna.class);
+		return anotacaoColuna.label();
 	}
 
 }

@@ -42,5 +42,4 @@ public class Frame extends JFrame {
 		gbl_contentPane.rowWeights = new double[]{Double.MIN_VALUE};
 		contentPane.setLayout(gbl_contentPane);
 	}
-
 }

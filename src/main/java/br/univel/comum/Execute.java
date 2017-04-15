@@ -1,15 +1,25 @@
 package br.univel.comum;
 
+import java.sql.Statement;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-// todo: import br.univel.entidades.Vendedor;
 import br.univel.anotacao.Coluna;
 import br.univel.anotacao.Tabela;
 
 public class Execute {
+	private ConexaoPostgreSQL conexaoPostgreSQL = null;
+
+	private Connection getConnection() {
+		if (conexaoPostgreSQL == null)
+			conexaoPostgreSQL = new ConexaoPostgreSQL();
+
+		return conexaoPostgreSQL.getConnection();
+	}
+	
 	private String getNomeTabela(Class<?> cl) {
 		String nomeTabela;
 		
@@ -136,7 +146,7 @@ public class Execute {
 		return sb;
 	}
 	
-	private StringBuilder getWhere(Class<?> cl) {
+	private StringBuilder getWhere(Class<?> cl, Object obj) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\nWHERE\n\t");
 		
@@ -151,11 +161,22 @@ public class Execute {
 				if (anotacaoColuna.pk()) {
 					if (achou > 0)
 						sb.append("AND\n\t ");
+					
+					field.setAccessible(true);
+					
+					Object valor = null;
+					try {
+						valor = field.get(obj);
+					} catch (IllegalArgumentException e) {
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						e.printStackTrace();
+					}
 
 					if (anotacaoColuna.nome().isEmpty())
-						sb.append(field.getName().toUpperCase()).append(" = ").append("?");
+						sb.append(field.getName().toUpperCase()).append(" = ").append(String.valueOf(valor));
 					else
-						sb.append(anotacaoColuna.nome()).append(" = ").append("?");
+						sb.append(anotacaoColuna.nome()).append(" = ").append(String.valueOf(valor));
 
 					achou++;
 				}
@@ -165,12 +186,12 @@ public class Execute {
 		return sb;
 	}
 	
-	private PreparedStatement getPreparedStatement(Connection con, Object obj, String sql, Class<?> cl) {
+	private PreparedStatement getPreparedStatement(Object obj, String sql, Class<?> cl) {
 		Field[] atributos = cl.getDeclaredFields();
 		
 		PreparedStatement ps = null;	
 		try {
-			ps = con.prepareStatement(sql);
+			ps = getConnection().prepareStatement(sql);
 
 			for (int i = 0; i < atributos.length; i++) {
 				Field field = atributos[i];
@@ -181,9 +202,8 @@ public class Execute {
 					ps.setInt(i + 1, field.getInt(obj));
 				else if (field.getType().equals(String.class))
 					ps.setString(i + 1, String.valueOf(field.get(obj)));
-				else if (field.getType().equals(BigDecimal.class)) {
+				else if (field.getType().equals(BigDecimal.class))
 					ps.setBigDecimal(i + 1, new BigDecimal(String.valueOf(field.get(obj))));
-				}
 				else
 					throw new RuntimeException("Tipo não suportado, falta implementar.");
 			}
@@ -194,17 +214,11 @@ public class Execute {
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 		}
-
-		return ps;		
+		
+		return ps;	
 	}
 	
-	private String getSelectAll(Class<?> cl) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("SELECT * FROM ").append(getNomeTabela(cl));
-		return sb.toString();
-	}
-	
-	public PreparedStatement getPreparedStatementForCreateTable(Connection con, Object obj) {
+	private PreparedStatement getPreparedStatementForCreateTable(Object obj) {
 		Class<? extends Object> cl = obj.getClass();
 
 		StringBuilder sb = new StringBuilder();
@@ -217,29 +231,10 @@ public class Execute {
 		sb.append(" )");
 		sb.append("\n);");			
 
-		return getPreparedStatement(con, obj, sb.toString(), cl);
+		return getPreparedStatement(obj, sb.toString(), cl);
 	}
 	
-	public PreparedStatement getPreparedStatementForSelectAll(Connection con, Object obj) {
-		Class<? extends Object> cl = obj.getClass();
-
-		StringBuilder sb = new StringBuilder();
-		sb.append(getSelectAll(cl));
-
-		return getPreparedStatement(con, obj, sb.toString(), cl);
-	}
-	
-	public PreparedStatement getPreparedStatementForSelect(Connection con, Object obj) {
-		Class<? extends Object> cl = obj.getClass();
-
-		StringBuilder sb = new StringBuilder();
-		sb.append(getSelectAll(cl)).append(getWhere(cl));
-
-		System.out.println(sb.toString());
-		return getPreparedStatement(con, obj, sb.toString(), cl);
-	}
-	
-	public PreparedStatement getPreparedStatementForInsert(Connection con, Object obj) {
+	private PreparedStatement getPreparedStatementForInsert(Object obj) {
 		Class<? extends Object> cl = obj.getClass();
 
 		StringBuilder sb = new StringBuilder();
@@ -260,10 +255,11 @@ public class Execute {
 		
 		sb.append(')');		
 
-		return getPreparedStatement(con, obj, sb.toString(), cl);
+		System.out.println(sb.toString());
+		return getPreparedStatement(obj, sb.toString(), cl);
 	}
 	
-	public PreparedStatement getPreparedStatementForUpdate(Connection con, Object obj) {
+	private PreparedStatement getPreparedStatementForUpdate(Object obj) {
 		Class<? extends Object> cl = obj.getClass();
 
 		StringBuilder sb = new StringBuilder();
@@ -271,69 +267,49 @@ public class Execute {
 		String nomeTabela = getNomeTabela(cl);
 		sb.append("UPDATE ").append(nomeTabela).append(" SET\n\t");
 		sb.append(getColunaUpdate(cl).toString());
-		sb.append(getWhere(cl).toString());
+		sb.append(getWhere(cl, obj).toString());
 		
-		return getPreparedStatement(con, obj, sb.toString(), cl);
+		return getPreparedStatement(obj, sb.toString(), cl);
 	}
 	
-	public PreparedStatement getPreparedStatementForDelete(Connection con, Object obj) {
+	private PreparedStatement getPreparedStatementForDelete(Object obj) {
 		Class<? extends Object> cl = obj.getClass();
 
 		StringBuilder sb = new StringBuilder();
 		
 		String nomeTabela = getNomeTabela(cl);
 		sb.append("DELETE FROM ").append(nomeTabela);
-		sb.append(getWhere(cl).toString());
+		sb.append(getWhere(cl, obj).toString());
 		
-		return getPreparedStatement(con, obj, sb.toString(), cl);
+		return getPreparedStatement(obj, sb.toString(), cl);
 	}
 	
-	/* todo:
-	public Execute() {
-		BigDecimal comissao = new BigDecimal(10);
+	public ResultSet executeSelectAll(Object obj) throws SQLException {
+		Class<? extends Object> cl = obj.getClass();
+		
+		Statement statement = getConnection().createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+		ResultSet resultSet = statement.executeQuery("SELECT * FROM " + getNomeTabela(cl));
 
-		Vendedor vendedor = new Vendedor();
-		vendedor.setIdVendedor(1);
-		vendedor.setNome("vendedor");
-		vendedor.setPercentualComissao(comissao);
-
-		Connection con = null;
-		try {
-			con = new ConexaoFalsa();
-
-			PreparedStatement ps = getPreparedStatementForInsert(con, vendedor);
-			ps.executeUpdate();
-			
-			PreparedStatement ps1 = getPreparedStatementForUpdate(con, vendedor);
-			ps1.executeUpdate();
-			
-			PreparedStatement ps2 = getPreparedStatementForDelete(con, vendedor);
-			ps2.executeUpdate();			
-			
-			PreparedStatement ps3 = getPreparedStatementForSelectAll(con, vendedor);
-			ps3.executeQuery();
-			
-			PreparedStatement ps4 = getPreparedStatementForCreateTable(con, vendedor);
-			ps4.executeUpdate();
-			
-			PreparedStatement ps5 = getPreparedStatementForSelect(con, vendedor);
-			ps5.executeQuery();			
-
-			ps.close();
-			ps1.close();
-			ps2.close();		
-			ps3.close();
-			ps4.close();
-			ps5.close();
-			con.close();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		return resultSet;
+	}
+	
+	public void executeCreateTable(Object obj) throws SQLException {
+		PreparedStatement ps = getPreparedStatementForCreateTable(obj);
+		ps.executeUpdate();		
+	}
+	
+	public void executeInsert(Object obj) throws SQLException {
+		PreparedStatement ps = getPreparedStatementForInsert(obj);
+		ps.executeUpdate();		
+	}
+	
+	public void executeUpdate(Object obj) throws SQLException {
+		PreparedStatement ps = getPreparedStatementForUpdate(obj);
+		ps.executeUpdate();		
 	}	
 	
-	public static void main(String[] args) {
-		new Execute();
-	}
-	*/	
+	public void executeDelete(Object obj) throws SQLException {
+		PreparedStatement ps = getPreparedStatementForDelete(obj);
+		ps.executeUpdate();		
+	}	
 }

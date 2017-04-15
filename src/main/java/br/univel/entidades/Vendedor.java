@@ -4,7 +4,7 @@ import br.univel.anotacao.Tabela;
 import br.univel.anotacao.Coluna;
 import java.math.BigDecimal;
 
-@Tabela("vendedor")
+@Tabela(value="vendedor")
 public class Vendedor {
 	@Coluna(pk=true, nome="idvendedor", label="Código")
 	private int idVendedor;

@@ -45,7 +45,7 @@ public class UtilTela {
 		createButton(contentPane, "Gravar", 11, 6);	
 		
 		JScrollPane scrollPane = createScrollPane(contentPane, 0, 7);
-		createTable(scrollPane);
+		createTable(scrollPane, o);
 
 		return contentPane;
 	}
@@ -133,9 +133,12 @@ public class UtilTela {
 		return scrollPane;
 	}
 	
-	private JTable createTable(JScrollPane scrollPane) {
+	private JTable createTable(JScrollPane scrollPane, Object o) {
 		JTable table = new JTable();
-		scrollPane.setViewportView(table);	
+		scrollPane.setViewportView(table);
+		
+		Tabela tabela = new Tabela(o);
+		table.setModel(tabela);
 		return table;
 	}
 }

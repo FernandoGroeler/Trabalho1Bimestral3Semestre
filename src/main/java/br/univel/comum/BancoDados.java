@@ -44,7 +44,7 @@ public class BancoDados {
 		this.driver = driver;
 	}
 	
-	void conectar() {
+	public void conectar() {
 		try {
 			Class.forName(this.driver);
 			con = DriverManager.getConnection(this.url, this.usuario, this.senha);

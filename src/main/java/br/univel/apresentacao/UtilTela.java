@@ -3,6 +3,8 @@ package br.univel.apresentacao;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.lang.reflect.Field;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -11,12 +13,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
-
 import br.univel.anotacao.Coluna;
 
 public class UtilTela {
 	public JPanel gerarTela(Object o) {
 		JPanel contentPane = new JPanel();
+		JButton botaoGravar;
+
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -36,15 +39,25 @@ public class UtilTela {
 			
 			createLabel(contentPane, field, 0, y);
 			y++;
+
 			createTextField(contentPane, field, 0, y);
 			y++;
-		}	
+		}
+
+		createButton(contentPane, "Buscar", 9, y);
+		createButton(contentPane, "Excluir", 10, y);
+
+		botaoGravar = createButton(contentPane, "Gravar", 11, y);
+		botaoGravar.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("Teste Gravar");
+				
+			}
+		});
 		
-		createButton(contentPane, "Buscar", 9, 6);
-		createButton(contentPane, "Excluir", 10, 6);
-		createButton(contentPane, "Gravar", 11, 6);	
-		
-		JScrollPane scrollPane = createScrollPane(contentPane, 0, 7);
+		y++;
+		JScrollPane scrollPane = createScrollPane(contentPane, 0, y);
 		createTable(scrollPane, o);
 
 		return contentPane;
@@ -73,19 +86,6 @@ public class UtilTela {
 		
 		return max;		
 	}
-	
-	/* todo:
-	private boolean getColunaObrigatoria(Field field) {
-		boolean obrigatorio = false;
-		
-		if (field.isAnnotationPresent(Coluna.class)) {
-			Coluna anotacaoColuna = field.getAnnotation(Coluna.class);
-			obrigatorio = anotacaoColuna.obrigatorio();
-		}
-		
-		return obrigatorio;		
-	}
-	*/
 	
 	private GridBagConstraints createConstraints(int x, int y) {
 		GridBagConstraints gbc = new GridBagConstraints();

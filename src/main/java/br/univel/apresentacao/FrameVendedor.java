@@ -2,18 +2,13 @@ package br.univel.apresentacao;
 
 import java.awt.Container;
 import java.awt.EventQueue;
-
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
 
+import br.univel.comum.Postgres;
 import br.univel.entidades.Vendedor;
 
-import java.awt.GridBagLayout;
-
 public class FrameVendedor extends Frame {
+	private static final long serialVersionUID = -572585322566244523L;
 
 	/**
 	 * Launch the application.
@@ -43,6 +38,9 @@ public class FrameVendedor extends Frame {
 	private Container getMeuContentPane() {
 		UtilTela u = new UtilTela();
 		Vendedor v = new Vendedor();
+		Postgres p = new Postgres();
+		
+		p.conectar();
 		return u.gerarTela(v);
 	}
 

@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import javax.swing.table.AbstractTableModel;
 
 public class Tabela extends AbstractTableModel {
+	private static final long serialVersionUID = 7395886541922199714L;
 	private Class<? extends Object> cl;
 	
 	public Tabela(Object o) {

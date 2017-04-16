@@ -286,18 +286,6 @@ public class Execute {
 		return getPreparedStatement(obj, sb.toString(), cl);
 	}
 	
-	private PreparedStatement getPreparedStatementForDelete(Object obj) {
-		Class<? extends Object> cl = obj.getClass();
-
-		StringBuilder sb = new StringBuilder();
-		
-		String nomeTabela = getNomeTabela(cl);
-		sb.append("DELETE FROM ").append(nomeTabela);
-		sb.append(getWhere(cl, obj).toString());
-		
-		return getPreparedStatement(obj, sb.toString(), cl);
-	}
-	
 	public ResultSet executeSelectAll(Object obj) throws SQLException {
 		Class<? extends Object> cl = obj.getClass();
 		
@@ -325,7 +313,15 @@ public class Execute {
 	}	
 	
 	public void executeDelete(Object obj) throws SQLException {
-		PreparedStatement ps = getPreparedStatementForDelete(obj);
-		ps.executeUpdate();		
+		Class<? extends Object> cl = obj.getClass();
+
+		StringBuilder sb = new StringBuilder();
+		
+		String nomeTabela = getNomeTabela(cl);
+		sb.append("DELETE FROM ").append(nomeTabela);
+		sb.append(getWhere(cl, obj).toString());
+		
+		PreparedStatement ps = getConnection().prepareStatement(sb.toString());
+		ps.executeUpdate();
 	}	
 }

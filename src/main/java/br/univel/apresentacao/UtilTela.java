@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -87,26 +88,50 @@ public class UtilTela {
 		Execute execute = new Execute();
 		try {
 			execute.executeInsert(o);
-			atualizarGrade(o);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
+		atualizarGrade(o);		
 	}
 	
-	private void atualizar(Object o, JPanel contentPane) {
-		getObjectPreenchido(o, contentPane);
+	private void buscar(Object o, JPanel contentPane) {
+		ResultSetMetaData resultSetMetaData = minhaTabela.getResultSetMetaData();
 		
-		Execute execute = new Execute();
 		try {
-			execute.executeUpdate(o);
+			for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+				String nome = resultSetMetaData.getColumnName(i).toUpperCase();
+
+				for (Component component : contentPane.getComponents()) {
+					if (component instanceof JTextField) {
+						JTextField textField = JTextField.class.cast(component);
+						String nomeTextField = textField.getName().toUpperCase(); 
+						
+						if (nomeTextField.equals(nome)) {
+							textField.setText(minhaTabela.getResultSet().getString(i));
+						}
+					}
+				}				
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
+		getObjectPreenchido(o, contentPane);
 	}
-		
-	private void gerarCampos(Object o, JPanel contentPane) {
+	
+	private void excluir(Object o, JPanel contentPane) {
 		Execute execute = new Execute();
-		
+		try {
+			execute.executeDelete(o);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		atualizarGrade(o);
+		buscar(o, contentPane);
+	}
+	
+	private void gerarCampos(Object o, JPanel contentPane) {
 		JButton btnBuscar;
 		JButton btnExlcuir;
 		JButton btnGravar;
@@ -130,11 +155,7 @@ public class UtilTela {
 		btnBuscar.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				try {
-					execute.executeSelectAll(o);
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
+				buscar(o, contentPane);
 			}
 		});
 		
@@ -142,11 +163,7 @@ public class UtilTela {
 		btnExlcuir.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				try {
-					execute.executeDelete(o);
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
+				excluir(o, contentPane);
 			}
 		});
 		

@@ -2,6 +2,7 @@ package br.univel.apresentacao;
 
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import javax.swing.table.AbstractTableModel;
@@ -12,6 +13,7 @@ public class Tabela extends AbstractTableModel {
 	private static final long serialVersionUID = 7395886541922199714L;
 	private Class<? extends Object> cl;
 	private ResultSet resultSet;
+	private ResultSetMetaData resultSetMetaData;
 
 	public Tabela(Object o) {
 		cl = o.getClass();
@@ -22,6 +24,7 @@ public class Tabela extends AbstractTableModel {
 		Execute ex = new Execute();
 		try {
 			resultSet = ex.executeSelectAll(o);
+			resultSetMetaData = resultSet.getMetaData();
 			resultSet.first();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -30,6 +33,10 @@ public class Tabela extends AbstractTableModel {
 	
 	public ResultSet getResultSet() {
 		return this.resultSet;
+	}
+	
+	public ResultSetMetaData getResultSetMetaData() {
+		return this.resultSetMetaData;
 	}
 	
 	@Override

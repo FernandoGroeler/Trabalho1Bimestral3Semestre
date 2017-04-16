@@ -12,12 +12,28 @@ import br.univel.anotacao.Tabela;
 
 public class Execute {
 	private ConexaoPostgreSQL conexaoPostgreSQL = null;
-
+	
 	private Connection getConnection() {
 		if (conexaoPostgreSQL == null)
 			conexaoPostgreSQL = new ConexaoPostgreSQL();
 
 		return conexaoPostgreSQL.getConnection();
+	}
+	
+	private boolean tabelaExiste(Object obj) {
+		Class<? extends Object> cl = obj.getClass();
+		boolean existe = false;
+		
+		Statement statement;
+		try {
+			statement = getConnection().createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet resultSet = statement.executeQuery("SELECT relname FROM pg_class WHERE relname = '" + getNomeTabela(cl) + "'");
+			existe = resultSet.next();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return existe;
 	}
 	
 	private String getNomeTabela(Class<?> cl) {
@@ -217,8 +233,8 @@ public class Execute {
 		
 		return ps;	
 	}
-	
-	private PreparedStatement getPreparedStatementForCreateTable(Object obj) {
+		
+	private String getCreateTable(Object obj) {
 		Class<? extends Object> cl = obj.getClass();
 
 		StringBuilder sb = new StringBuilder();
@@ -231,7 +247,7 @@ public class Execute {
 		sb.append(" )");
 		sb.append("\n);");			
 
-		return getPreparedStatement(obj, sb.toString(), cl);
+		return sb.toString();
 	}
 	
 	private PreparedStatement getPreparedStatementForInsert(Object obj) {
@@ -254,8 +270,6 @@ public class Execute {
 		}
 		
 		sb.append(')');		
-
-		System.out.println(sb.toString());
 		return getPreparedStatement(obj, sb.toString(), cl);
 	}
 	
@@ -294,8 +308,10 @@ public class Execute {
 	}
 	
 	public void executeCreateTable(Object obj) throws SQLException {
-		PreparedStatement ps = getPreparedStatementForCreateTable(obj);
-		ps.executeUpdate();		
+		if (!tabelaExiste(obj)) {
+			PreparedStatement ps = getConnection().prepareStatement(getCreateTable(obj));
+			ps.executeUpdate();
+		}
 	}
 	
 	public void executeInsert(Object obj) throws SQLException {

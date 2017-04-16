@@ -15,30 +15,39 @@ public class Tabela extends AbstractTableModel {
 
 	public Tabela(Object o) {
 		cl = o.getClass();
-
+		Refresh(o);
+	}
+	
+	public void Refresh(Object o) {
 		Execute ex = new Execute();
 		try {
 			resultSet = ex.executeSelectAll(o);
 			resultSet.first();
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}
+		}		
+	}
+	
+	public ResultSet getResultSet() {
+		return this.resultSet;
 	}
 	
 	@Override
 	public int getRowCount() {
 		try {
-			resultSet.last();
-			return resultSet.getRow();
+			if (resultSet != null) {
+				resultSet.last();
+				return resultSet.getRow();
+			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return 0;
 		}
+
+		return 0;
 	}
 
 	@Override
-	public int getColumnCount() {
+	public int getColumnCount() {		
 		Field[] atributos = cl.getDeclaredFields();
 		return atributos.length;
 	}
@@ -46,11 +55,14 @@ public class Tabela extends AbstractTableModel {
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		try {
-			this.resultSet.absolute(rowIndex + 1);
-			return this.resultSet.getString(columnIndex + 1);
+			if (resultSet != null) {
+				this.resultSet.absolute(rowIndex + 1);
+				return this.resultSet.getString(columnIndex + 1);
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
 		return null;
 	}
 
@@ -61,5 +73,4 @@ public class Tabela extends AbstractTableModel {
 		Coluna anotacaoColuna = field.getAnnotation(Coluna.class);
 		return anotacaoColuna.label();
 	}
-
 }

@@ -1,9 +1,14 @@
 package br.univel.apresentacao;
 
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.sql.SQLException;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -12,8 +17,10 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import br.univel.anotacao.Coluna;
+import br.univel.comum.Execute;
 
 public class UtilTela {
+	Tabela minhaTabela;
 	public JPanel gerarTela(Object o) {
 		JPanel contentPane = new JPanel();
 
@@ -30,7 +37,80 @@ public class UtilTela {
 		return contentPane;
 	}
 	
+	private void getObjectPreenchido(Object o, JPanel contentPane) {
+		Class<? extends Object> cl = o.getClass();
+		Field[] vetorFields = cl.getDeclaredFields();
+		
+		for (Component component : contentPane.getComponents()) {
+			if (component instanceof JTextField) {
+				JTextField textField = JTextField.class.cast(component);
+				
+				for (Field field : vetorFields) {
+					field.setAccessible(true);
+					 
+					if (field.getName().equals(textField.getName())) {
+						try {
+							if ((field.getType().equals(Integer.class)) || (field.getType().equals(int.class))) {
+								int valorInt = Integer.parseInt(textField.getText());
+								field.set(o, valorInt);
+							} else if (field.getType().equals(String.class)) {
+								String valorStr = textField.getText();
+								field.set(o, valorStr);
+							} else if (field.getType().equals(BigDecimal.class)) {
+								BigDecimal valorBigDecimal = new BigDecimal(Double.parseDouble(textField.getText()));
+								field.set(o, valorBigDecimal);
+							}
+						} catch (IllegalArgumentException | IllegalAccessException e) {
+							e.printStackTrace();
+						} 
+					}
+				}
+			}
+		}
+	}
+	
+	private void atualizarGrade(Object o) {
+		minhaTabela.fireTableDataChanged();
+
+		try {
+			minhaTabela.getResultSet().close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		minhaTabela.Refresh(o);		
+	}
+	
+	private void inserir(Object o, JPanel contentPane) {
+		getObjectPreenchido(o, contentPane);
+		
+		Execute execute = new Execute();
+		try {
+			execute.executeInsert(o);
+			atualizarGrade(o);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void atualizar(Object o, JPanel contentPane) {
+		getObjectPreenchido(o, contentPane);
+		
+		Execute execute = new Execute();
+		try {
+			execute.executeUpdate(o);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+		
 	private void gerarCampos(Object o, JPanel contentPane) {
+		Execute execute = new Execute();
+		
+		JButton btnBuscar;
+		JButton btnExlcuir;
+		JButton btnGravar;
+		
 		Class<? extends Object> cl = o.getClass();
 		Field[] atributos = cl.getDeclaredFields();
 		
@@ -46,9 +126,37 @@ public class UtilTela {
 			y++;
 		}
 
-		createButton(contentPane, "Buscar", 9, y);
-		createButton(contentPane, "Excluir", 10, y);
-		createButton(contentPane, "Gravar", 11, y);
+		btnBuscar = createButton(contentPane, "Buscar", 9, y);
+		btnBuscar.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					execute.executeSelectAll(o);
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			}
+		});
+		
+		btnExlcuir = createButton(contentPane, "Excluir", 10, y);
+		btnExlcuir.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					execute.executeDelete(o);
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			}
+		});
+		
+		btnGravar = createButton(contentPane, "Gravar", 11, y);
+		btnGravar.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				inserir(o, contentPane);
+			}
+		});
 		
 		y++;
 		JScrollPane scrollPane = createScrollPane(contentPane, 0, y);
@@ -103,6 +211,7 @@ public class UtilTela {
 		gbc.fill = GridBagConstraints.HORIZONTAL;		
 		contentPane.add(textField, gbc);
 		textField.setColumns(getMaxColuna(field));	
+		textField.setName(field.getName());
 		return textField;
 	}
 	
@@ -128,9 +237,8 @@ public class UtilTela {
 	private JTable createTable(JScrollPane scrollPane, Object o) {
 		JTable table = new JTable();
 		scrollPane.setViewportView(table);
-		
-		Tabela tabela = new Tabela(o);
-		table.setModel(tabela);
+		minhaTabela = new Tabela(o);
+		table.setModel(minhaTabela);
 		return table;
 	}
 }

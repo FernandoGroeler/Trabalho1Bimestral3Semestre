@@ -22,7 +22,11 @@ import br.univel.comum.Execute;
 
 public class UtilTela {
 	Tabela minhaTabela;
+	boolean buscou;
+	
 	public JPanel gerarTela(Object o) {
+		buscou = false;
+		
 		JPanel contentPane = new JPanel();
 
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -36,6 +40,15 @@ public class UtilTela {
 		gerarCampos(o, contentPane);
 
 		return contentPane;
+	}
+	
+	private void limparCampos(JPanel contentPane) {
+		for (Component component : contentPane.getComponents()) {
+			if (component instanceof JTextField) {
+				JTextField textField = JTextField.class.cast(component);
+				textField.setText("");
+			}
+		}		
 	}
 	
 	private void getObjectPreenchido(Object o, JPanel contentPane) {
@@ -78,8 +91,8 @@ public class UtilTela {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
-		minhaTabela.Refresh(o);		
+			
+		minhaTabela.Refresh(o);
 	}
 	
 	private void inserir(Object o, JPanel contentPane) {
@@ -87,17 +100,23 @@ public class UtilTela {
 		
 		Execute execute = new Execute();
 		try {
-			execute.executeInsert(o);
+			if (buscou)
+				execute.executeUpdate(o);
+			else
+				execute.executeInsert(o);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		
-		atualizarGrade(o);		
+		atualizarGrade(o);
+		limparCampos(contentPane);
+		buscou = false;
 	}
 	
 	private void buscar(Object o, JPanel contentPane) {
 		ResultSetMetaData resultSetMetaData = minhaTabela.getResultSetMetaData();
-		
+		boolean existe = false;
+
 		try {
 			for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
 				String nome = resultSetMetaData.getColumnName(i).toUpperCase();
@@ -109,6 +128,7 @@ public class UtilTela {
 						
 						if (nomeTextField.equals(nome)) {
 							textField.setText(minhaTabela.getResultSet().getString(i));
+							existe = true;
 						}
 					}
 				}				
@@ -117,7 +137,13 @@ public class UtilTela {
 			e.printStackTrace();
 		}
 		
-		getObjectPreenchido(o, contentPane);
+		if (existe) {
+			getObjectPreenchido(o, contentPane);
+			buscou = true;
+		} else {
+			buscou = false;
+			limparCampos(contentPane);
+		}
 	}
 	
 	private void excluir(Object o, JPanel contentPane) {

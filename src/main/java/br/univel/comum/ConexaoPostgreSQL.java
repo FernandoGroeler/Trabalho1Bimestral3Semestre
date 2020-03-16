@@ -6,7 +6,7 @@ public class ConexaoPostgreSQL extends Conexao {
 	public void conectar() {
 		setUrl("jdbc:postgresql://localhost:5432/TrabalhoBimestral");
 		setUsuario("postgres");
-		setSenha("pr4gr1m1d4r");
+		setSenha("12345");
 		setDriver("org.postgresql.Driver");
 		super.conectar();
 	}
